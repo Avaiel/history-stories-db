@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>史策逻辑训练营 - 洞察博弈</title>
+    <title>史策逻辑训练营 - 深度复盘版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .heat-cell { width: 11px; height: 11px; border-radius: 2px; background-color: #e2e8f0; }
@@ -11,11 +11,19 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        #logic-card { display: none; } /* 默认隐藏逻辑要点 */
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        #logic-card { display: none; } 
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        
+        /* 判官反馈样式渲染优化 */
+        .feedback-content h5 { color: #a5b4fc; font-weight: 800; margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; letter-spacing: 0.1em; border-bottom: 1px solid #334155; padding-bottom: 4px; text-transform: uppercase; }
+        .feedback-content strong { color: #ffffff; font-weight: 700; background: rgba(99, 102, 241, 0.2); padding: 0 2px; border-radius: 2px; }
+        .feedback-content blockquote { border-left: 4px solid #6366f1; padding: 0.5rem 1rem; font-style: italic; color: #cbd5e1; margin: 1rem 0; background: rgba(30, 41, 59, 0.5); border-radius: 0 8px 8px 0; }
+        .feedback-content p { margin-bottom: 0.75rem; line-height: 1.7; }
+        /* 专门为“术语浅析”设计的样式 */
+        .term-box { background: rgba(16, 185, 129, 0.1); border: 1px border #10b981; padding: 10px; border-radius: 8px; margin-top: 10px; color: #d1fae5; font-size: 0.75rem; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-10 font-sans">
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-10 font-sans leading-relaxed">
 
     <!-- 导航栏 -->
     <nav class="glass-nav border-b sticky top-0 z-50">
@@ -30,95 +38,98 @@
         
         <!-- 【训练页】 -->
         <section id="today" class="tab-content active space-y-6">
-            <!-- 称号与天数 -->
-            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 text-white shadow-lg flex justify-between items-center">
+            <!-- 称号展示 -->
+            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 text-white shadow-xl flex justify-between items-center">
                 <div>
-                    <p class="text-[10px] opacity-70 uppercase tracking-widest">Logic Rank</p>
-                    <h2 id="user-title" class="text-xl font-black italic">加载中...</h2>
+                    <p class="text-[10px] opacity-70 uppercase tracking-widest mb-1">Logic Rank</p>
+                    <h2 id="user-title" class="text-xl font-black italic tracking-tight">加载中...</h2>
                 </div>
                 <div class="text-right">
-                    <p class="text-[10px] opacity-70 uppercase tracking-widest">Streak</p>
-                    <p class="text-xl font-bold"><span id="streak-count">0</span> Days</p>
+                    <p class="text-[10px] opacity-70 uppercase tracking-widest mb-1">Streak</p>
+                    <p class="text-2xl font-bold"><span id="streak-count">0</span> <span class="text-xs">Days</span></p>
                 </div>
             </div>
 
             <!-- 故事展示卡片 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-4">
                 <div class="flex justify-between items-center">
-                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">Daily Insight</span>
+                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">Daily Story</span>
                     <span id="story-date" class="text-[10px] text-slate-400 font-mono"></span>
                 </div>
-                <h3 id="story-title" class="text-lg font-bold text-slate-800 tracking-tight">正在同步 GitHub 史库...</h3>
-                <div id="story-content" class="text-slate-600 leading-relaxed text-sm whitespace-pre-wrap italic bg-slate-50 p-4 rounded-xl border-dashed border-2 border-slate-200"></div>
+                <h3 id="story-title" class="text-lg font-bold text-slate-800 tracking-tight leading-snug">正在翻阅史库...</h3>
+                <div id="story-content" class="text-slate-600 text-sm whitespace-pre-wrap italic bg-slate-50 p-5 rounded-2xl border-dashed border-2 border-slate-200 leading-relaxed shadow-inner"></div>
                 
-                <!-- 逻辑要点：初始隐藏，评价后揭晓 -->
-                <div id="logic-card" class="bg-amber-50 p-4 rounded-xl border-l-4 border-amber-400 animate-pulse-once">
-                    <p class="text-[10px] font-bold text-amber-600 mb-2 uppercase tracking-widest">判官参照逻辑 (标准解析)：</p>
+                <!-- 逻辑要点：评价后揭晓 -->
+                <div id="logic-card" class="bg-amber-50 p-4 rounded-xl border-l-4 border-amber-400">
+                    <p class="text-[10px] font-bold text-amber-600 mb-2 uppercase tracking-widest">判官参照逻辑：</p>
                     <p id="story-logic" class="text-xs text-amber-900 leading-normal"></p>
                 </div>
             </div>
 
             <!-- 复述输入区 -->
             <div class="space-y-4">
-                <textarea id="user-input" class="w-full h-44 p-4 rounded-2xl border-none shadow-inner bg-white focus:ring-2 focus:ring-indigo-400 outline-none text-sm transition-all" placeholder="请复述上述故事，并重点分析其背后的博弈、心理或权力逻辑..."></textarea>
-                
-                <div class="flex gap-3">
-                    <button id="btn-record" class="flex-1 bg-white border border-indigo-100 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:bg-indigo-50 transition shadow-sm">
-                        <span id="record-icon">🎙️</span> <span id="record-text" class="text-sm">录音复述</span>
-                    </button>
-                    <button id="btn-submit" class="flex-[2] bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 active:scale-95 transition">
-                        🤖 AI 锐评并打卡
-                    </button>
-                </div>
-                <p id="mic-status" class="text-[10px] text-center text-slate-400"></p>
+                <textarea id="user-input" class="w-full h-48 p-5 rounded-3xl border-none shadow-inner bg-white focus:ring-2 focus:ring-indigo-400 outline-none text-sm transition-all" placeholder="请在此复述故事逻辑，尝试用博弈和动机视角分析..."></textarea>
+                <button id="btn-submit" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 active:scale-95 transition-all text-sm tracking-widest">
+                    🤖 提交并召唤 AI 判官
+                </button>
             </div>
 
-            <!-- AI 评价区 -->
-            <div id="ai-section" class="hidden">
-                <div class="bg-slate-900 rounded-2xl p-6 shadow-2xl border-t-4 border-indigo-500">
-                    <h4 class="text-indigo-400 text-[10px] font-bold mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-                        DeepSeek 逻辑判官反馈
+            <!-- AI 评价反馈区 -->
+            <div id="ai-section" class="hidden space-y-6">
+                <div class="bg-slate-900 rounded-[2.5rem] p-7 shadow-2xl border-t-8 border-indigo-500 relative overflow-hidden">
+                    <div class="absolute -top-4 -right-4 p-8 opacity-5 font-black text-6xl text-white select-none italic tracking-tighter">ANALYSIS</div>
+                    <h4 class="text-indigo-400 text-[10px] font-bold mb-4 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></span>
+                        判官深度反馈
                     </h4>
-                    <div id="ai-feedback" class="text-slate-300 text-sm leading-relaxed whitespace-pre-line font-serif italic"></div>
+                    <div id="ai-feedback" class="feedback-content text-slate-300 text-sm font-serif"></div>
+                </div>
+
+                <!-- 个人复盘笔记 -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4">
+                    <h4 class="text-slate-800 text-xs font-bold flex items-center gap-2">
+                        <span class="text-base">📝</span> 个人进化笔记
+                    </h4>
+                    <textarea id="personal-note" class="w-full h-32 p-4 text-sm bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-200 outline-none placeholder:text-slate-300 shadow-inner" placeholder="今天学到了什么新的逻辑点？判官纠正了你哪个思维盲区？"></textarea>
+                    <div class="flex items-center gap-3">
+                        <button onclick="savePersonalNote()" class="text-[10px] bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-700 transition shadow-md">保存复盘内容</button>
+                        <p id="save-status" class="text-[9px] text-green-500 hidden font-bold animate-bounce">✓ 笔记已同步至存档</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- 【存档页】 -->
         <section id="history" class="tab-content space-y-4">
-            <h2 class="text-lg font-bold px-1 text-slate-800">历练足迹</h2>
+            <h2 class="text-lg font-bold px-1 text-slate-800">历练存档</h2>
             <div id="history-container" class="space-y-4"></div>
         </section>
 
         <!-- 【成就页】 -->
         <section id="stats" class="tab-content space-y-6">
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <h3 class="font-bold text-sm mb-4 tracking-tight">思维热力图 (30 Days)</h3>
-                <div id="heatmap" class="grid grid-cols-7 gap-2 w-max mx-auto"></div>
-                <div class="mt-4 flex justify-between text-[10px] text-slate-400 font-mono italic">
-                    <span>观望中</span>
-                    <span>深度进化</span>
+            <div class="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-sm mb-5 text-center text-slate-700">思维进化热力图</h3>
+                <div id="heatmap" class="grid grid-cols-7 gap-2.5 w-max mx-auto"></div>
+                <div class="mt-5 flex justify-between text-[9px] text-slate-400 font-mono tracking-tighter px-2">
+                    <span>观望 (NONE)</span>
+                    <span>深度进化 (LOGIC)</span>
                 </div>
             </div>
-
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <h3 class="font-bold text-sm mb-4 tracking-tight">封号晋升体系</h3>
-                <div id="badge-list" class="space-y-4"></div>
+            <div class="bg-white rounded-3xl p-7 shadow-sm border border-slate-100">
+                <h3 class="font-bold text-sm mb-5 text-slate-700">荣誉体系</h3>
+                <div id="badge-list" class="space-y-5"></div>
             </div>
         </section>
     </main>
 
     <script>
-        /** 核心配置 **/
         const STORY_DB_URL = 'https://raw.githubusercontent.com/Avaiel/history-stories-db/main/stories.json';
         const DS_API_KEY = 'sk-00554b4c6d574644bfd5bcfe5043c303';
-        const STORAGE_KEY = 'history_logic_pro_vfinal';
+        const STORAGE_KEY = 'history_logic_pro_v_notes_v2';
 
         let userData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { records: {}, streak: 0, lastDate: null };
         let currentStory = null;
 
-        /** 初始化 **/
         document.addEventListener('DOMContentLoaded', async () => {
             await initDailyStory();
             updateStatsUI();
@@ -126,18 +137,30 @@
             renderHistory();
         });
 
-        /** 1. 加载 GitHub 史库故事 **/
+        // 格式化判官输出，处理术语浅析板块
+        function formatJudgeOutput(text) {
+            let html = text
+                .replace(/^### (.*$)/gim, '<h5>$1</h5>') 
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                .replace(/> (.*$)/gim, '<blockquote>$1</blockquote>') 
+                .replace(/\n/g, '<br>');
+            
+            // 如果包含“术语浅析”，将其放入一个特殊的绿色框中
+            if (html.includes('术语浅析')) {
+                html = html.replace('<h5>术语浅析</h5>', '<div class="term-box"><strong>💡 术语通俗解释</strong><br>');
+                html += '</div>';
+            }
+            return html;
+        }
+
         async function initDailyStory() {
             try {
-                // 增加随机后缀防止浏览器强力缓存
                 const res = await fetch(`${STORY_DB_URL}?t=${Date.now()}`);
                 const stories = await res.json();
-                
                 const now = new Date();
                 const dateStr = now.toISOString().split('T')[0];
                 document.getElementById('story-date').innerText = dateStr;
 
-                // 算法：基于日期数字选择当天的固定故事
                 const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 100 + now.getDate();
                 currentStory = stories[seed % stories.length];
 
@@ -148,61 +171,52 @@
                 if (userData.records[dateStr]) {
                     showFinalState(userData.records[dateStr]);
                 }
-            } catch (e) {
-                document.getElementById('story-title').innerText = "史库同步失败";
-                document.getElementById('story-content').innerText = "请检查 stories.json 是否存在或格式是否正确（是否包含非法换行符等）。";
-            }
+            } catch (e) { document.getElementById('story-title').innerText = "史库同步中..."; }
         }
 
-        /** 2. DeepSeek AI 逻辑评价 **/
         async function callDeepSeek(userInput) {
-            const prompt = `你是一位精通资治通鉴、马基雅维利权谋与博弈论的冷面判官。
-对比【标准逻辑解析】：${currentStory.logic}
-和【用户复述分析】：${userInput}
+            const prompt = `你是一位冷酷的历史博弈判官。
+对比【标准逻辑】：${currentStory.logic}
+对比【用户复述】：${userInput}
 
-你的任务：
-1. 逻辑审计：严厉指出用户在因果推导、利益动机分析上的缺失。
-2. 毒舌锐评：用高度凝练、犀利且带点幽默的话评价其思维深度。
-3. 逻辑评分：0-10分。
-4. 深度复述：给出一个具备顶级逻辑水准的复述范例。`;
+请按此结构输出，严禁使用#或*等原始符号：
+### 逻辑审计
+(指出用户分析的漏洞)
+### 毒舌锐评
+> (犀利且幽默的总结)
+### 逻辑评分
+(0-10)
+### 术语浅析
+(如果你在上面使用了专业术语如“沉没成本”、“纳什均衡”、“路径依赖”、“帕累托改进”、“信息不对称”等，请在这里用大白话和生活例子解释给小白听。如果没有使用专业术语，则跳过此项。)
+### 逻辑范例
+(最高水准的简短复述)`;
 
             try {
                 const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${DS_API_KEY}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${DS_API_KEY}` },
                     body: JSON.stringify({
                         model: "deepseek-chat",
-                        messages: [
-                            { role: "system", content: "你是一个说话一针见血的逻辑专家，不废话，评价直接且专业。" },
-                            { role: "user", content: prompt }
-                        ],
+                        messages: [{ role: "system", content: "判官不输出Markdown原始符号，只输出结构化的文字。" }, { role: "user", content: prompt }],
                         temperature: 0.6
                     })
                 });
                 const data = await response.json();
                 return data.choices[0].message.content;
-            } catch (e) {
-                console.error(e);
-                return "判官连接被屏蔽。请检查 API Key 或网络环境。";
-            }
+            } catch (e) { return "判官连接中断。"; }
         }
 
-        /** 3. 打卡提交处理 **/
         document.getElementById('btn-submit').onclick = async () => {
             const input = document.getElementById('user-input').value.trim();
-            if (input.length < 5) return alert("逻辑复述太单薄，请深入思考。");
+            if (input.length < 5) return alert("复述太短，逻辑无法判定。");
 
             const btn = document.getElementById('btn-submit');
-            btn.innerText = "判官正在拆解逻辑...";
+            btn.innerText = "判官正在审批...";
             btn.disabled = true;
 
             const feedback = await callDeepSeek(input);
             const today = new Date().toISOString().split('T')[0];
             
-            // 连击逻辑计算
             if (userData.lastDate !== today) {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
@@ -215,11 +229,12 @@
                 title: currentStory.title, 
                 userText: input, 
                 aiFeedback: feedback,
-                logic: currentStory.logic 
+                logic: currentStory.logic,
+                note: "" 
             };
             userData.records[today] = record;
-            
             localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+            
             showFinalState(record);
             updateStatsUI();
             renderHeatmap();
@@ -227,106 +242,22 @@
 
         function showFinalState(record) {
             document.getElementById('ai-section').classList.remove('hidden');
-            document.getElementById('ai-feedback').innerText = record.aiFeedback;
-            document.getElementById('logic-card').style.display = 'block'; // 评价后揭晓答案
+            document.getElementById('ai-feedback').innerHTML = formatJudgeOutput(record.aiFeedback);
+            document.getElementById('logic-card').style.display = 'block';
             document.getElementById('user-input').value = record.userText;
-            document.getElementById('btn-submit').innerText = "今日逻辑已进化";
+            document.getElementById('personal-note').value = record.note || "";
+            document.getElementById('btn-submit').innerText = "今日打卡完成";
             document.getElementById('btn-submit').disabled = true;
-            document.getElementById('user-input').disabled = true;
         }
 
-        /** 4. 录音功能排查与反馈 **/
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'zh-CN';
-            recognition.interimResults = false;
-            let isRecording = false;
-
-            document.getElementById('btn-record').onclick = () => {
-                if (isRecording) {
-                    recognition.stop();
-                    return;
-                }
-                try {
-                    recognition.start();
-                    isRecording = true;
-                    updateRecordBtn(true);
-                    document.getElementById('mic-status').innerText = "倾听中，请完整叙述博弈过程...";
-                } catch (e) {
-                    document.getElementById('mic-status').innerText = "麦克风冲突: " + e.message;
-                }
-            };
-
-            recognition.onresult = (e) => {
-                const resultText = e.results[0][0].transcript;
-                document.getElementById('user-input').value += resultText;
-                document.getElementById('mic-status').innerText = "识别完成";
-            };
-
-            recognition.onend = () => {
-                isRecording = false;
-                updateRecordBtn(false);
-            };
-
-            recognition.onerror = (e) => {
-                let errorMsg = "识别出错";
-                if(e.error === 'not-allowed') errorMsg = "需在设置中允许麦克风权限";
-                document.getElementById('mic-status').innerText = errorMsg;
-                isRecording = false;
-                updateRecordBtn(false);
-            };
-
-            function updateRecordBtn(active) {
-                document.getElementById('record-text').innerText = active ? "停止录音" : "录音复述";
-                document.getElementById('record-icon').innerText = active ? "🛑" : "🎙️";
-            }
-        } else {
-            document.getElementById('mic-status').innerText = "浏览器不支持语音识别";
-        }
-
-        /** 5. 统计、勋章、热力图 **/
-        function updateStatsUI() {
-            const streak = userData.streak || 0;
-            document.getElementById('streak-count').innerText = streak;
-            
-            const badges = [
-                {n: "史书学童", d: 1, e: "👶"},
-                {n: "执笔校尉", d: 3, e: "📜"},
-                {n: "内阁辅臣", d: 7, e: "⚖️"},
-                {n: "资治判官", d: 15, e: "🧠"},
-                {n: "史策帝师", d: 30, e: "👑"}
-            ];
-            
-            let currentTitle = badges[0].n;
-            badges.forEach(b => { if(streak >= b.d) currentTitle = b.n; });
-            document.getElementById('user-title').innerText = currentTitle;
-
-            const badgeHtml = badges.map(b => `
-                <div class="flex items-center justify-between ${streak >= b.d ? 'opacity-100' : 'opacity-20'}">
-                    <div class="flex items-center gap-3">
-                        <span class="text-xl">${b.e}</span>
-                        <div><p class="text-sm font-bold text-slate-700">${b.n}</p><p class="text-[10px] text-slate-400">连续挑战 ${b.d} 天</p></div>
-                    </div>
-                    <span>${streak >= b.d ? '✅' : '🔒'}</span>
-                </div>
-            `).join('');
-            document.getElementById('badge-list').innerHTML = badgeHtml;
-        }
-
-        function renderHeatmap() {
-            const container = document.getElementById('heatmap');
-            container.innerHTML = '';
-            const today = new Date();
-            for (let i = 27; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(today.getDate() - i);
-                const dStr = d.toISOString().split('T')[0];
-                const active = userData.records[dStr];
-                const cell = document.createElement('div');
-                cell.className = `heat-cell ${active ? 'bg-active' : ''}`;
-                cell.title = dStr;
-                container.appendChild(cell);
+        function savePersonalNote() {
+            const today = new Date().toISOString().split('T')[0];
+            if (userData.records[today]) {
+                userData.records[today].note = document.getElementById('personal-note').value;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+                const status = document.getElementById('save-status');
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 2000);
             }
         }
 
@@ -336,28 +267,63 @@
             container.innerHTML = dates.map(date => {
                 const r = userData.records[date];
                 return `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[10px] font-mono text-slate-400">${date}</span>
-                            <span class="text-xs font-black text-indigo-500 underline decoration-indigo-200">${r.title}</span>
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-3 text-[10px] font-bold">
+                            <span class="font-mono text-slate-300 uppercase tracking-widest">${date}</span>
+                            <span class="text-indigo-500 underline decoration-indigo-100">${r.title}</span>
                         </div>
-                        <p class="text-xs text-slate-600 line-clamp-2 mb-3 italic">“${r.userText}”</p>
-                        <details class="group bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        <p class="text-[11px] text-slate-400 mb-4 italic line-clamp-1">复述：${r.userText}</p>
+                        <details class="group">
                             <summary class="text-[10px] text-indigo-400 font-bold cursor-pointer list-none flex items-center gap-1">
-                                <span class="group-open:rotate-90 transition-transform">▶</span> 查看判官批注
+                                <span class="group-open:rotate-90 transition-transform">▶</span> 展开深度存档
                             </summary>
-                            <div class="mt-3 text-[11px] text-slate-500 leading-loose whitespace-pre-line border-t border-slate-200 pt-2">${r.aiFeedback}</div>
-                            <div class="mt-4 pt-2 border-t border-dashed border-slate-300">
-                                <p class="text-[9px] font-bold text-amber-600">复盘逻辑要点：</p>
-                                <p class="text-[10px] text-amber-800">${r.logic || '暂无解析'}</p>
-                            </div>
+                            <div class="mt-4 p-5 bg-slate-900 text-slate-300 rounded-3xl text-[11px] feedback-content border-t-4 border-indigo-400">${formatJudgeOutput(r.aiFeedback)}</div>
+                            ${r.note ? `
+                                <div class="mt-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 text-[11px]">
+                                    <p class="text-amber-600 font-black mb-1">💡 个人复盘总结：</p>
+                                    <p class="text-amber-800">${r.note}</p>
+                                </div>
+                            ` : ''}
                         </details>
                     </div>
                 `;
-            }).join('') || '<p class="text-center text-slate-400 text-sm py-10 tracking-widest italic">尚未留下思辨印记...</p>';
+            }).join('') || '<p class="text-center text-slate-300 text-sm py-10 italic">尚未开始逻辑修行...</p>';
         }
 
-        /** 选项卡切换 **/
+        function updateStatsUI() {
+            const streak = userData.streak || 0;
+            document.getElementById('streak-count').innerText = streak;
+            const badges = [
+                {n: "史书学童", d: 1, e: "👶"}, {n: "执笔校尉", d: 3, e: "📜"},
+                {n: "内阁辅臣", d: 7, e: "⚖️"}, {n: "资治判官", d: 15, e: "🧠"}, {n: "史策帝师", d: 30, e: "👑"}
+            ];
+            let title = badges[0].n;
+            badges.forEach(b => { if(streak >= b.d) title = b.n; });
+            document.getElementById('user-title').innerText = title;
+            document.getElementById('badge-list').innerHTML = badges.map(b => `
+                <div class="flex items-center justify-between ${streak >= b.d ? 'opacity-100' : 'opacity-20'}">
+                    <div class="flex items-center gap-4">
+                        <span class="text-2xl">${b.e}</span>
+                        <div><p class="text-sm font-bold text-slate-700">${b.n}</p><p class="text-[9px] text-slate-400 uppercase tracking-widest">Target: ${b.d} Days</p></div>
+                    </div>
+                    <span>${streak >= b.d ? '✨' : '🔒'}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderHeatmap() {
+            const container = document.getElementById('heatmap');
+            container.innerHTML = '';
+            for (let i = 27; i >= 0; i--) {
+                const d = new Date(); d.setDate(new Date().getDate() - i);
+                const dStr = d.toISOString().split('T')[0];
+                const active = userData.records[dStr];
+                const cell = document.createElement('div');
+                cell.className = `heat-cell ${active ? 'bg-active' : ''}`;
+                container.appendChild(cell);
+            }
+        }
+
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(b => b.className = 'text-slate-500 pb-1');
