@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>史策逻辑训练营 - 洞察历史背后的博弈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .heat-cell { width: 10px; height: 10px; border-radius: 2px; transition: all 0.3s; }
+        .bg-empty { background-color: #e2e8f0; }
+        .bg-fill { background-color: #10b981; box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .logic-card { border-left: 4px solid #6366f1; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900 min-h-screen pb-10">
+
+    <!-- 顶部导航 -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center p-4">
+            <h1 class="font-bold text-indigo-600 text-lg">📜 史策逻辑</h1>
+            <div class="flex gap-4 text-sm font-medium">
+                <button onclick="showTab('today')" id="tab-today" class="text-indigo-600 border-b-2 border-indigo-600 pb-1">训练</button>
+                <button onclick="showTab('history')" id="tab-history" class="text-gray-500 pb-1">存档</button>
+                <button onclick="showTab('stats')" id="tab-stats" class="text-gray-500 pb-1">成就</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-md mx-auto p-4 space-y-6">
+        
+        <!-- 【训练页】 -->
+        <section id="today" class="tab-content active space-y-6">
+            <!-- 称号勋章 -->
+            <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-5 text-white shadow-xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs opacity-80 mb-1">当前逻辑封号</p>
+                        <h2 id="user-title" class="text-2xl font-black tracking-wide">初入史林</h2>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs opacity-80 mb-1">连续打卡</p>
+                        <p class="text-2xl font-bold"><span id="streak-count">0</span> <span class="text-sm">天</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日故事 -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 logic-card">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase">Daily Insight</span>
+                    <span id="current-date" class="text-xs text-gray-400 font-mono">2025-12-28</span>
+                </div>
+                <h3 id="story-title" class="text-xl font-bold mb-3 text-slate-800">正在同步 GitHub 史库...</h3>
+                <p id="story-content" class="text-gray-600 leading-relaxed text-sm italic mb-4"></p>
+                <div class="bg-slate-50 p-4 rounded-xl">
+                    <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">核心逻辑深度 (AI 评分标准)</p>
+                    <p id="story-logic" class="text-xs text-slate-600 leading-normal"></p>
+                </div>
+            </div>
+
+            <!-- 复述交互区 -->
+            <div class="space-y-4">
+                <textarea id="user-input" class="w-full h-44 p-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all text-sm shadow-inner" placeholder="点击下方的语音按钮开始复述，讲出该故事背后的深度逻辑..."></textarea>
+                
+                <div class="flex gap-3">
+                    <button id="btn-record" class="flex-[1] bg-white border border-gray-200 py-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition shadow-sm">
+                        <span id="mic-icon">🎙️</span> <span id="record-text">语音复述</span>
+                    </button>
+                    <button id="btn-submit" class="flex-[2] bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition">
+                        🤖 AI 锐评
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI 反馈 -->
+            <div id="ai-section" class="hidden">
+                <div class="bg-slate-900 rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="flex h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <h4 class="text-indigo-400 text-xs font-bold uppercase tracking-widest">Gemini 逻辑判官</h4>
+                    </div>
+                    <div id="ai-feedback" class="text-slate-300 text-sm leading-relaxed whitespace-pre-line font-serif"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 【存档页】 -->
+        <section id="history" class="tab-content space-y-4">
+            <h2 class="text-lg font-bold px-1">往日深度复述记录</h2>
+            <div id="history-container" class="space-y-4"></div>
+        </section>
+
+        <!-- 【成就页】 -->
+        <section id="stats" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-sm mb-4">逻辑训练热力图</h3>
+                <div id="heatmap" class="grid grid-cols-7 gap-2 w-max"></div>
+                <div class="mt-4 flex justify-between text-[10px] text-gray-400 italic">
+                    <span>最近30天挑战记录</span>
+                    <span>绿色越深思考越勤</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-sm mb-4">封号进阶体系</h3>
+                <div id="achievement-list" class="space-y-4"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /** 配置区 **/
+        const STORY_DATA_URL = 'https://raw.githubusercontent.com/Avaiel/history-stories-db/refs/heads/main/stories.json';
+        const STORAGE_KEY = 'history_logic_pro_v2';
+        const GEMINI_API_KEY = 'AIzaSyDPCSQ8aawRAL7jU4fjNPhmLW0WR3IWGFo'; 
+
+        let userData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { records: {}, streak: 0, lastDate: null };
+        let currentStory = null;
+
+        /** 初始化 **/
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDailyStory();
+            updateDashboard();
+            renderHeatmap();
+            renderHistory();
+        });
+
+        /** 核心功能：获取故事 **/
+        async function loadDailyStory() {
+            try {
+                const res = await fetch(STORY_DATA_URL);
+                const stories = await res.json();
+                
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                document.getElementById('current-date').innerText = dateStr;
+
+                const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 100 + now.getDate();
+                currentStory = stories[seed % stories.length];
+
+                document.getElementById('story-title').innerText = currentStory.title;
+                document.getElementById('story-content').innerText = currentStory.content;
+                document.getElementById('story-logic').innerText = currentStory.logic;
+
+                if (userData.records[dateStr]) {
+                    document.getElementById('user-input').value = userData.records[dateStr].userText;
+                    document.getElementById('user-input').readOnly = true;
+                    showAIResult(userData.records[dateStr].aiFeedback);
+                    const btn = document.getElementById('btn-submit');
+                    btn.innerText = "今日已挑战";
+                    btn.disabled = true;
+                }
+            } catch (e) {
+                document.getElementById('story-title').innerText = "GitHub 数据抓取失败";
+                console.error(e);
+            }
+        }
+
+        /** 核心功能：Gemini API 接入 **/
+        async function callGemini(input) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const prompt = `
+                你是一位毒舌且深邃的历史博弈论专家。
+                任务：对比【标准逻辑】和用户的【复述记录】，给出犀利的逻辑点评。
+                
+                【标准逻辑】：${currentStory.logic}
+                【用户复述】：${input}
+                
+                请按以下结构回答：
+                1. 逻辑缺失：指出用户复述中漏掉的最核心的博弈点、因果链或人性动机。
+                2. 锐评：用一针见血、幽默但严厉的话评价其逻辑能力。
+                3. 分数：满分10分，给出评分。
+                4. 逻辑重构：用一段极其精炼的话重新示范如何有逻辑地表述这个故事。
+            `;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+                    })
+                });
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+                return "判官无法回应，请检查 API Key 权限。";
+            } catch (e) {
+                return "连接 Gemini 失败，请检查网络环境或 Key。";
+            }
+        }
+
+        document.getElementById('btn-submit').onclick = async () => {
+            const userText = document.getElementById('user-input').value.trim();
+            if (userText.length < 5) return alert("复述内容太单薄，逻辑无法展开。");
+
+            const btn = document.getElementById('btn-submit');
+            btn.innerText = "判官审阅中...";
+            btn.disabled = true;
+
+            const feedback = await callGemini(userText);
+            
+            showAIResult(feedback);
+            saveData(userText, feedback);
+            btn.innerText = "挑战完成";
+        };
+
+        /** 语音识别 **/
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = false;
+            let isRecording = false;
+
+            document.getElementById('btn-record').onclick = () => {
+                if (!isRecording) {
+                    recognition.start();
+                    document.getElementById('record-text').innerText = "正在倾听...";
+                    document.getElementById('mic-icon').innerText = "🛑";
+                    isRecording = true;
+                } else {
+                    recognition.stop();
+                    isRecording = false;
+                }
+            };
+
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                document.getElementById('user-input').value += text;
+                document.getElementById('record-text').innerText = "语音复述";
+                document.getElementById('mic-icon').innerText = "🎙️";
+                isRecording = false;
+            };
+        }
+
+        /** 存档与奖励 **/
+        function saveData(text, feedback) {
+            const dateStr = new Date().toISOString().split('T')[0];
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+            if (userData.lastDate === yesterdayStr) {
+                userData.streak += 1;
+            } else if (userData.lastDate !== dateStr) {
+                userData.streak = 1;
+            }
+
+            userData.lastDate = dateStr;
+            userData.records[dateStr] = {
+                title: currentStory.title,
+                userText: text,
+                aiFeedback: feedback
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+            updateDashboard();
+            renderHeatmap();
+            renderHistory();
+        }
+
+        function showAIResult(text) {
+            document.getElementById('ai-section').classList.remove('hidden');
+            document.getElementById('ai-feedback').innerText = text;
+        }
+
+        function updateDashboard() {
+            const streak = userData.streak;
+            document.getElementById('streak-count').innerText = streak;
+            
+            const levels = [
+                {n: "初入史林", d: 1, e: "👶"},
+                {n: "执笔校尉", d: 3, e: "📜"},
+                {n: "内阁辅臣", d: 7, e: "⚖️"},
+                {n: "逻辑帝师", d: 15, e: "🧠"},
+                {n: "史策圣手", d: 30, e: "👑"}
+            ];
+            
+            let title = levels[0].n;
+            levels.forEach(l => { if(streak >= l.d) title = l.n; });
+            document.getElementById('user-title').innerText = title;
+
+            const listHtml = levels.map(l => `
+                <div class="flex items-center justify-between ${streak >= l.d ? 'opacity-100' : 'opacity-30'}">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">${l.e}</span>
+                        <div>
+                            <p class="text-sm font-bold">${l.n}</p>
+                            <p class="text-[10px] text-gray-500">连续坚持 ${l.d} 天</p>
+                        </div>
+                    </div>
+                    ${streak >= l.d ? '✅' : '🔒'}
+                </div>
+            `).join('');
+            document.getElementById('achievement-list').innerHTML = listHtml;
+        }
+
+        function renderHeatmap() {
+            const container = document.getElementById('heatmap');
+            container.innerHTML = '';
+            const today = new Date();
+            for (let i = 27; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dStr = d.toISOString().split('T')[0];
+                const active = userData.records[dStr];
+                const cell = document.createElement('div');
+                cell.className = `heat-cell ${active ? 'bg-fill' : 'bg-empty'}`;
+                cell.title = dStr;
+                container.appendChild(cell);
+            }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const dates = Object.keys(userData.records).sort().reverse();
+            container.innerHTML = dates.map(date => {
+                const r = userData.records[date];
+                return `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[10px] font-mono text-gray-400">${date}</span>
+                            <span class="text-xs font-bold text-indigo-500">${r.title}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 line-clamp-2 mb-3">“${r.userText}”</p>
+                        <details class="group">
+                            <summary class="text-[10px] text-indigo-400 cursor-pointer outline-none">展开判官锐评</summary>
+                            <div class="mt-2 text-[11px] text-slate-500 bg-slate-50 p-3 rounded-lg leading-relaxed border-l-2 border-indigo-200 whitespace-pre-line">
+                                ${r.aiFeedback}
+                            </div>
+                        </details>
+                    </div>
+                `;
+            }).join('') || '<p class="text-center text-gray-400 text-sm py-10">尚无存档，开始你的第一次练习吧</p>';
+        }
+
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.className = 'text-gray-500 pb-1');
+            document.getElementById(id).classList.add('active');
+            document.getElementById('tab-' + id).className = 'text-indigo-600 border-b-2 border-indigo-600 pb-1';
+        }
+    </script>
+</body>
+</html>
